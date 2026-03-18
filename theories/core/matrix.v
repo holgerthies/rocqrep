@@ -44,7 +44,22 @@ Definition mx_query (phi : names MX)  : tmx :=
     mkseq (fun j => fun q => phi (q, (i,j))) n.+1) m.+1.
 
 Definition mx_entry (phi : names MX) i j : names X := fun q => (phi (q, (i,j))).
+
 End Matrix_rep.
+Section Matrix_ops.
+
+Context {m n : nat} {X : repType}.
+Local Notation MX := 'M[X]_(m.+1,n.+1).
+Local Notation MX_t := 'M[X]_(n.+1,m.+1).
+Definition mx_transpose_rlzr (phi : names MX) : names MX_t := (fun q => (phi (q.1, (q.2.2,q.2.1)))).
+
+Lemma mx_transpose_rlzr_spec phi (x : MX) : phi |= x -> mx_transpose_rlzr phi |= (x^T)%R.
+Proof.
+rewrite /mx_transpose_rlzr => -h i j /=.
+rewrite mxE.
+exact: h.
+Qed.
+End Matrix_ops.
 
 Section MatrixZmod.
 Context {m n : nat} {X : repZmodType}.
@@ -121,11 +136,11 @@ Open Scope rep_scope.
 Definition mx_mult_rlzr (phi1 : names MX) (phi2 : names MY) : names MZ :=
   fun q => ((\sum_(i < n.+1) ((mx_entry phi1 (q.2.1) i) * (mx_entry phi2 i (q.2.2))))%rep q.1).
 
+Opaque sum_rlzr.
 Lemma mx_mult_rlzr_spec phi1 phi2 (x : MX) (y : MY) : phi1 |= x -> phi2 |= y -> mx_mult_rlzr phi1 phi2 |= (x *m y)%R.
 Proof.
 move => name1 name2.
 rewrite /mx_mult_rlzr => i j.
-Opaque sum_rlzr.
 rewrite mxE/=.
 suff -> : (\sum_(j0 < n.+1) x (inord i) j0 * y j0 (inord j))%R = (\sum_(j0 < n.+1) x (inord i) (inord j0) * y (inord j0) (inord j))%R.
   apply (sum_rlzr_spec (fun i0 => (mx_entry phi1 i i0) * (mx_entry phi2 i0 j)) (fun i0 => ((x (inord i) (inord i0)) * y (inord i0) (inord j)))%R).
@@ -134,6 +149,21 @@ suff -> : (\sum_(j0 < n.+1) x (inord i) j0 * y j0 (inord j))%R = (\sum_(j0 < n.+
 apply congr1; apply funext => k /=.
 by rewrite inord_val.
 Qed.
+
+Definition mx_smult_rlzr (phix : names X) (phiM : names MX) : names MX := fun q => (phix * mx_entry phiM q.2.1 q.2.2) q.1.
+
+Lemma mx_smult_rlzr_spec phix phiM (x : X) (M : MX) : phix |= x -> phiM |= M -> mx_smult_rlzr phix phiM |= (x *: M)%R.
+Proof.
+move => name1 name2.
+rewrite /mx_smult_rlzr => i j.
+rewrite mxE/=.
+rewrite /mx_entry.
+by apply mul_nameP.
+Qed.
+
+Transparent sum_rlzr.
 End MatrixMult.
 
 Notation "x *m y" := (mx_mult_rlzr x y) : rep_scope.
+Notation "x *: y" := (mx_smult_rlzr x y) : rep_scope.
+Notation "x ^T" := (mx_transpose_rlzr x) : rep_scope.
