@@ -4,7 +4,7 @@ Require Import Interval.Float.Specific_bigint.
 Require Import Bignums.BigQ.BigQ Bignums.BigZ.BigZ.
 From mathcomp Require Import reals rat ssrnum all_ssreflect all_algebra Rstruct ssrZ.
 From mathcomp Require Import all_boot all_order ssralg ssrnum mathcomp_extra.
-From RocqRep Require Import core.representation extra.interval_counttype extra.interval_string extra.tpmn interval_extensions.
+From RocqRep Require Import core.representation core.matrix extra.interval_counttype extra.interval_string extra.tpmn interval_extensions.
 From HB Require Import structures.
 Import Order.TTheory GRing.Theory Num.Def Num.Theory.
 
@@ -378,4 +378,14 @@ Coercion QtoReal: Q >-> names.
 
 Definition approx_real (x : names R) (n : nat) := interval_to_cr_string (x n) (Pos.of_nat n).
 
+Notation "x `| n"  := (approx_real x n) (at level 2).
 
+Notation mxr_type := (seq (seq (names R))).
+
+Definition rmx_from_seq (M : mxr_type) := mx_from_seq (n:=(List.length M).-1) (m:=(List.length (nth [::] M 0)).-1) (c:=(0 0%nat)) M.
+
+Coercion rmx_from_seq:  mxr_type >-> names.
+
+Definition approx_real_matrix {n m} (x : names 'M[R]_(n.+1,m.+1)) p := map (fun r=>(map (fun j => approx_real j p) r)) (mx_query x).
+
+Notation "x `|| n"  := (approx_real_matrix x n) (at level 2).

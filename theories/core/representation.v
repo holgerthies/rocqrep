@@ -69,7 +69,6 @@ HB.mixin Record isRepField T of GRing.Field T & RepComRing T := {
 #[short(type="repFieldType")]
 HB.structure Definition RepiIeld :=
   { T of GRing.ComRing T &isRepField T }.
-
 Declare Scope rep_scope.
 Delimit Scope rep_scope with rep.
 Notation "0" := (zero_rlzr) : rep_scope.

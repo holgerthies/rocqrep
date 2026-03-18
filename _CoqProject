@@ -1,6 +1,7 @@
 -Q theories RocqRep
 
 theories/core/representation.v
+theories/core/matrix.v
 theories/extra/tpmn.v
 theories/extra/interval_counttype.v
 theories/extra/interval_string.v
