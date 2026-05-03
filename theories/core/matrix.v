@@ -1,19 +1,39 @@
 From Stdlib Require Import Reals.
 From Stdlib Require Import Lra Lia.
 From HB Require Import structures.
-From mathcomp Require Import reals all_ssreflect all_boot boolp all_order all_algebra ssrnum ssralg ssrnum mathcomp_extra matrix.
+From mathcomp Require Import reals all_ssreflect all_boot boolp all_order all_algebra ssrnum ssralg ssrnum mathcomp_extra matrix classical_sets ssrint.
 From mathcomp Require Import Rstruct.
 
 From mathcomp Require Import reals topology.
-From RocqRep Require Import core.representation.
+From CoqEAL Require Import hrel param refinements trivial_seq.
+From CoqEAL Require Import seqmx seqmx_complements binint binrat.
 
+From RocqRep Require Import spaces.efftop.
+Import Order.Theory GRing.Theory Num.Theory.
+Import Refinements.Op.
+Local Open Scope ring_scope.
+Local Open Scope hetero_computable_scope.
+
+Local Open Scope classical_set_scope.
 Section Matrix_rep.
-Context {m n : nat} {X : repType}.
-Local Notation MX := 'M[X]_(m.+1,n.+1).
-Local Notation Q := (@queries X * (nat * nat))%type.
-Local Notation A :=  (@answers X).
-Definition repM := fun (name : Q -> A) (x : MX) => forall i j, (fun q => (name (q,(i,j)))) |= (x (inord i) (inord j)).
+Context {m n : nat} {X : effectiveTopType}.
+Context {zero : X}.
+Local Notation MX := 'M[X]_(m,n).
+Local Notation MB := (@hseqmx (@nbhd_type X) m n).
+Instance spec_X : spec_of (@nbhd_type X) (set X) := to_set. 
 
+#[local] Instance set_zero : zero_of (set X) := set0.
+
+
+Definition to_set (x: MB) : set MX:= set0.
+(* @spec_seqmx (set X) _ _ spec_X m n x. *)
+(* Check to_set. *)
+Lemma  nbhd_base :
+    forall (x :MX)  U, open U -> U x -> 
+      exists b, to_set b x /\ to_set b `<=` U.
+Proof.
+move => x U Uopen Ux.
+Lemma nbhd_base 
 Lemma repM_surjective : repM \is_surjective.
 Proof.
 move => M.
@@ -46,11 +66,13 @@ Definition mx_query (phi : names MX)  : tmx :=
 Definition mx_entry (phi : names MX) i j : names X := fun q => (phi (q, (i,j))).
 
 End Matrix_rep.
+
 Section Matrix_ops.
 
 Context {m n : nat} {X : repType}.
 Local Notation MX := 'M[X]_(m.+1,n.+1).
 Local Notation MX_t := 'M[X]_(n.+1,m.+1).
+
 Definition mx_transpose_rlzr (phi : names MX) : names MX_t := (fun q => (phi (q.1, (q.2.2,q.2.1)))).
 
 Lemma mx_transpose_rlzr_spec phi (x : MX) : phi |= x -> mx_transpose_rlzr phi |= (x^T)%R.
@@ -59,6 +81,7 @@ rewrite /mx_transpose_rlzr => -h i j /=.
 rewrite mxE.
 exact: h.
 Qed.
+
 End Matrix_ops.
 
 Section MatrixZmod.
@@ -99,8 +122,11 @@ rewrite mxE/=.
 by apply opp_nameP.
 Qed.
 
+
 HB.instance Definition mx_isRepZmod :=
   isRepZmod.Build MX mx_zero_rlzr_spec mx_add_rlzr_spec mx_opp_rlzr_spec.
+
+Definition mx_diag (phi : names MX) : names MX := (fun q => if (q.2.1 =? q.2.2) then (phi (q.1, (q.2.2,q.2.1))) else (0 q.1)).
 End MatrixZmod.
 
 (*todo : move to own file *)

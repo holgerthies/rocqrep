@@ -8,9 +8,7 @@ From mathcomp Require Import all_boot all_order ssralg ssrnum mathcomp_extra.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
-
-Module SFBI2 := SpecificFloat BigIntRadix2.    
-Module FI   := FloatInterval SFBI2.         
+From RocqRep Require Import interval_counttype.
 Notation I := FI.type.
 Definition F := SFBI2.type.
 (* interval string operations, should be moved *)

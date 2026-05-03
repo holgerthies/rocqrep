@@ -5,16 +5,14 @@ Require Import Bignums.BigQ.BigQ Bignums.BigZ.BigZ.
 From mathcomp Require Import reals rat ssrnum all_ssreflect all_algebra Rstruct ssrZ.
 From mathcomp Require Import all_boot all_order ssralg ssrnum mathcomp_extra.
 Import Order.TTheory GRing.Theory Num.Def Num.Theory.
-
+From RocqRep Require Import interval_counttype.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 Local Open Scope ring_scope.
-Module SFBI2 := SpecificFloat BigIntRadix2.    
 From Stdlib Require Import Reals.
 From Stdlib Require Import Lra Lia.
-Module FI   := FloatInterval SFBI2.         
 Import Interval.Real.Xreal.
 Import GRing.Theory Num.Theory.
 Import BigN BigZ.
@@ -39,7 +37,6 @@ case x => //.
 rewrite /FI.neg/FI.bounded/= => l u /andP[].
 by rewrite !FI.F'.real_neg => -> ->.
 Qed.
-
 
 Lemma D2R_SFBI2toX m e: SFBI2.toX (Float m e) = Xreal (D2R (Float m e)).
 Proof.
