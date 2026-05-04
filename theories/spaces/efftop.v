@@ -138,11 +138,12 @@ Record rlzr2_of {X Y Z: effectiveTopType} (f : X -> Y -> Z) := {
     rlzr2_correct : forall x y phi1 phi2, (is_top_name phi1 x) -> (is_top_name phi2 y) -> (is_top_name (lift_rlzr2 rlzr2_fun phi1 phi2) (f x y))
   }.
 
-HB.mixin Record repTopZModule T of effectiveTopological T & TopologicalZmodule T := {
+HB.mixin Record repTopZModule T of Topological T & effectiveTopological T & GRing.Zmodule T := {
    zero_rlzr : name_of (0 : T); 
    add_rlzr : rlzr2_of (fun (x y : T) => x + y);
    opp_rlzr : rlzr_of (fun (x : T) => (- x)); 
 }.
+
 #[short(type="effectiveTopZModType")]
 HB.structure Definition effectiveTopZMod := { T of Topological T & effectiveTopological T & repTopZModule T}.
 
@@ -214,6 +215,26 @@ apply inv_rlzr_correct => //.
 apply name_correct.
 Defined.
 
+Section Sum.
+Context {X : effectiveTopZModType}.
+
+Fixpoint sum_rlzr_fun (F : nat -> @nbhd_type X) n p := match n with
+                                           | 0%nat => (name_fun (0 : X) zero_rlzr p)
+                                           | n'.+1 => (rlzr2_fun _ add_rlzr p (sum_rlzr_fun F n' p) (F n'))
+                                         end.
+
+Definition sum_rlzr {f : _ -> X} (p : forall n, name_of (f n)) n : name_of (\sum_(i < n) f (nat_of_ord i)).
+Proof.
+Check sum_rlzr_fun.
+refine {|name_fun := (fun q => sum_rlzr_fun (fun (i : nat) => name_fun _ (p i) q) n q)|}.
+induction n;first by rewrite big_ord0;apply name_correct.
+rewrite big_ord_recr /=.
+apply rlzr2_correct => //=.
+apply p.
+Defined.
+End Sum.
+
+
 Coercion eval_rlzr : rlzr_of >-> Funclass.
 Coercion eval_rlzr2 : rlzr2_of >-> Funclass.
 
@@ -222,15 +243,23 @@ Parameter index : nat.
 End EFFTOP_PARAMS.
 
 Module Type EFFTOP_OBJECT.
-  Parameter T : repNzRingType.
+  Parameter T : effectiveTopType.
 End EFFTOP_OBJECT.
+
+Module Type EFFTOP_ZMOD_OBJECT.
+  Parameter T : effectiveTopZModType.
+End EFFTOP_ZMOD_OBJECT.
+
+Module Type EFFTOP_RING_OBJECT.
+  Parameter T : repNzRingType.
+End EFFTOP_RING_OBJECT.
 
 Module Type EFFTOP_FIELD_OBJECT.
   Parameter T : repFieldType.
 End EFFTOP_FIELD_OBJECT.
 
 Module EffectiveTop (params : EFFTOP_PARAMS).
-Module ForRing (O : EFFTOP_OBJECT).
+Module For (O : EFFTOP_OBJECT).
 Definition X := O.T.
 Definition n := params.index.
 Local Definition nbhds := @nbhd_type X.
@@ -245,10 +274,18 @@ Record ApproximationOf  (x : X) :=
 Arguments approx_val {x} _.
 Coercion approx_val : ApproximationOf >-> Countable.sort.
 
-Definition one_approx : ApproximationOf 1.
+Definition approx_of_name {x} (p : name_of x) : ApproximationOf x.
 Proof.
-  by refine {| phi := one_rlzr; approx_val :=  name_fun _ one_rlzr n |}.
+  by refine {| approx_val := name_fun _ p n|}.
 Defined.
+
+Coercion approx_of_name : name_of >-> ApproximationOf.
+End For.
+Module ForZmod (O : EFFTOP_ZMOD_OBJECT).
+ Module effTopObj.
+    Definition T : effectiveTopType := O.T.
+  End effTopObj.
+Include For(effTopObj).
 
 Definition zero_approx : ApproximationOf 0.
 Proof.
@@ -267,27 +304,46 @@ Proof.
   by rewrite !approx_spec.
 Defined.
 
+Definition sum_approx {f : _ -> X} (p : forall n, ApproximationOf (f n)) m  : ApproximationOf (\sum_(i < m) f (nat_of_ord i)).
+Proof.
+Check sum_rlzr.
+  refine {| approx_val := (sum_rlzr_fun (fun i => approx_val (p i)) m) n; phi := (sum_rlzr (fun n=> phi _ (p n)) m) |}.
+  simpl.
+  congr (sum_rlzr_fun _ _ _).
+  apply funext => i.
+  apply approx_spec.
+Defined.
+
+Notation "\sum_ ( i < n ) F" :=
+  (sum_approx (fun i => F) n) (at level 34, i at level 60, n at level 60, F at level 41) : rep_scope.
+
+Declare Scope rep_scope.
+Delimit Scope rep_scope with CT.
+Notation "0" := (zero_approx  ) : rep_scope. 
+Notation "- x" := (opp_approx x) : rep_scope. 
+Notation "x + y" :=  (add_approx x y) : rep_scope.
+Notation "x - y" := (x + (-y))%CT : rep_scope. 
+End ForZmod.
+
+Module ForRing (O : EFFTOP_RING_OBJECT).
+ Module ZmodObj.
+    Definition T : effectiveTopZModType := O.T.
+  End ZmodObj.
+Include ForZmod(ZmodObj).
+Definition one_approx : ApproximationOf 1.
+Proof.
+  by refine {| phi := one_rlzr; approx_val :=  name_fun _ one_rlzr n |}.
+Defined.
+
 Definition mul_approx {x y} (p : ApproximationOf x) (q : ApproximationOf y): ApproximationOf (x*y).
 Proof.
   refine {| approx_val := rlzr2_fun _ mul_rlzr n (approx_val p) (approx_val q); phi := mul_rlzr (phi _ p) (phi _ q)  |}.
   by rewrite !approx_spec.
 Defined.
 
-Definition approx_of_name {x} (p : name_of x) : ApproximationOf x.
-Proof.
-  by refine {| approx_val := name_fun _ p n|}.
-Defined.
-
-Coercion approx_of_name : name_of >-> ApproximationOf.
-
-Declare Scope rep_scope.
-Delimit Scope rep_scope with CT.
-Notation "0" := (zero_approx  ) : rep_scope. 
 Notation "1" := (one_approx ) : rep_scope. 
-Notation "- x" := (opp_approx x) : rep_scope. 
-Notation "x + y" :=  (add_approx x y) : rep_scope.
-Notation "x - y" := (x + (-y))%CT : rep_scope. 
 Notation "x * y" :=  (mul_approx x y) : rep_scope.
+
 End ForRing.
 
 Module ForField (O : EFFTOP_FIELD_OBJECT).

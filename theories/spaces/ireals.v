@@ -96,7 +96,6 @@ apply /RltP.
 by rewrite -!RealsE.
 Qed.
 
-HB.about effectiveTopological.Build.
 HB.instance Definition real_efftop :=
   effectiveTopological.Build R real_kolmogorov I I_set Inbhd_base.
 
@@ -279,6 +278,7 @@ by refine {|
     rlzr2_correct := addIR_is_rlzr
   |}.
 Defined.
+
 
 HB.instance Definition real_effzmod := repTopZModule.Build R zeroIR_name addIR_rlzr oppIR_rlzr.
 
@@ -526,6 +526,23 @@ Eval vm_compute in (test_fix' 10 x0) `| 10.
 
 Eval vm_compute in (1+(float_to_real 1 2) * (float_to_real 5 4))%CT `| 3.
 
+
+From RocqRep Require Import matrix.
+
+Module MatrixObject.
+  Definition T := ('M[R]_(2,2) : effectiveTopZModType).
+End MatrixObject.
+
+
+Module MApprox := E.ForZmod(MatrixObject).
+Import MApprox.
+Definition z := (0 : ApproximationOf (Algebra.zero : 'M[R]_(2,2))).
+
+Definition approx_real_matrix {n m} (x : @nbhd_type 'M[R]_(n,m)) p := map (fun r=>(map (fun j => interval_to_cr_string j p) r)) x. 
+Definition M1  := mx_name_from_fun (m:=2) (n:=2) (fun i j => float_to_real (Z.of_nat i) (-2)).
+
+Notation "x `|| n"  := (approx_real_matrix (approx_val x) n) (at level 2). 
+Eval vm_compute in ((approx_val 0) ).
 (* Definition a := (QArith_base.Qmake 2 200 : name_of _). *)
 (* Definition h := (add_rlzr a a). *)
 (* Definition approx_name {x : R} (phi : name_of x) (n : nat) := interval_to_cr_string (phi.(name_fun _) n) (Pos.of_nat n). *)
@@ -567,6 +584,5 @@ Eval vm_compute in (1+(float_to_real 1 2) * (float_to_real 5 4))%CT `| 3.
 
 (* Coercion rmx_from_seq:  mxr_type >-> names. *)
 
-(* Definition approx_real_matrix {n m} (x : names 'M[R]_(n.+1,m.+1)) p := map (fun r=>(map (fun j => approx_real j p) r)) (mx_query x). *)
 
 (* Notation "x `|| n"  := (approx_real_matrix x n) (at level 2). *)

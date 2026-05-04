@@ -2,7 +2,7 @@
 
 theories/core/representation.v
 theories/spaces/efftop.v
-# theories/core/matrix.v
+theories/core/matrix.v
 theories/extra/tpmn.v
 theories/extra/interval_counttype.v
 theories/extra/interval_string.v
